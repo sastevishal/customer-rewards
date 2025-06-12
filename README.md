@@ -35,43 +35,50 @@ A purchase of $120 earns:
 ---
 
 ## API Endpoint
-### GET /api/rewards/{customerId}
+### GET /api/rewards/
 
 #### Parameters:
-- `customerId` (Path): ID of the customer
-- `startDate` (Query): Start date of the timeframe (yyyy-MM-dd)
 - `endDate` (Query): End date of the timeframe (yyyy-MM-dd)
 
 #### Example:
 ```
-GET /api/rewards/C001?startDate=2025-03-01&endDate=2025-05-31
+GET http://localhost:8081/api/rewards?endDate=2025-06-09
 ```
 
 #### Response:
 ```json
-{
-  "customerId": "C001",
-  "customerName": "Vishal Saste",
-  "startDate": "2025-03-01",
-  "endDate": "2025-05-31",
-  "totalRewards": 150,
-  "monthlyRewards": {
-    "2025-03": 90,
-    "2025-05": 60
-  },
-  "transactions": [
+[
     {
-      "amount": 120.0,
-      "date": "2025-03-15",
-      "rewardPoints": 90
+        "customerId": 1,
+        "customerName": "Vishal Saste",
+        "monthlyRewards": {
+            "JUNE": 90,
+            "MAY": 25,
+            "APRIL": 250
+        },
+        "totalRewards": 365
     },
     {
-      "amount": 90.0,
-      "date": "2025-05-05",
-      "rewardPoints": 40
+        "customerId": 2,
+        "customerName": "Ashu Wala",
+        "monthlyRewards": {
+            "JUNE": 0,
+            "MAY": 70,
+            "MARCH": 40
+        },
+        "totalRewards": 110
+    },
+    {
+        "customerId": 3,
+        "customerName": "Rohit Saste",
+        "monthlyRewards": {
+            "JUNE": 52,
+            "MAY": 5,
+            "APRIL": 110
+        },
+        "totalRewards": 167
     }
-  ]
-}
+]
 ```
 
 ## Running the App
@@ -81,7 +88,7 @@ mvn spring-boot:run
 ```
 
 ## Testing
-JUnit tests are included in `RewardServiceImplTest and RewardControllerTest`.
+JUnit tests are included.
 Run with:
 ```
 mvn test
