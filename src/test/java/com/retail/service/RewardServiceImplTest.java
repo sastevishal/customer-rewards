@@ -3,7 +3,7 @@ package com.retail.service;
 import com.retail.dto.CustomerRewardResponse;
 import com.retail.entity.Customer;
 import com.retail.entity.Transaction;
-import com.retail.util.RewardValidationUtil;
+import com.retail.handler.RewardValidationHandler;
 import com.retail.helper.CustomerRepositoryHelper;
 import com.retail.helper.TransactionRepositoryHelper;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +29,7 @@ class RewardServiceImplTest {
     private CustomerRepositoryHelper customerRepositoryHelper;
 
     @Mock
-    private RewardValidationUtil rewardValidationUtil;
+    private RewardValidationHandler rewardValidationHandler;
 
     @Mock
     private TransactionRepositoryHelper transactionRepositoryHelper;
@@ -89,7 +89,7 @@ class RewardServiceImplTest {
 
         when(customerRepositoryHelper.fetchAllCustomers()).thenReturn(Collections.emptyList());
         doThrow(new RuntimeException("No customers found"))
-                .when(rewardValidationUtil).validateCustomerList(Collections.emptyList());
+                .when(rewardValidationHandler).validateCustomerList(Collections.emptyList());
 
         Exception exception = assertThrows(RuntimeException.class, () ->
                 rewardService.getAllCustomerRewards(startDate, endDate));

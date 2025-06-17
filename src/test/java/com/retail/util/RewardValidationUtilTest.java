@@ -1,4 +1,4 @@
-package com.retail.util;
+package com.retail.handler;
 
 import com.retail.entity.Customer;
 import com.retail.exceptionhandler.NoCustomerFoundException;
@@ -11,13 +11,13 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class RewardValidationUtilTest {
+class RewardValidationHandlerTest {
 
-    private RewardValidationUtil validationHandler;
+    private RewardValidationHandler validationHandler;
 
     @BeforeEach
     void setUp() {
-        validationHandler = new RewardValidationUtil();
+        validationHandler = new RewardValidationHandler();
     }
 
     @Test

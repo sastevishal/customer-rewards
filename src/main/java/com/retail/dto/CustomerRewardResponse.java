@@ -20,6 +20,16 @@ public class CustomerRewardResponse {
     public CustomerRewardResponse() {
     }
 
+    public CustomerRewardResponse(Long customerId, String customerName, int totalPoints) {
+        this.customerId = customerId;
+        this.customerName = customerName;
+        this.totalRewards = totalPoints;
+    }
+
+    public CustomerRewardResponse() {
+
+    }
+
     public Long getCustomerId() {
         return customerId;
     }

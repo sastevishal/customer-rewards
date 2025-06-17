@@ -1,14 +1,13 @@
 package com.retail.service;
 
 import com.retail.dto.CustomerRewardResponse;
-import com.retail.dto.TransactionResponse;
 import com.retail.entity.Customer;
 import com.retail.entity.Transaction;
-import com.retail.util.RewardValidationUtil;
+import com.retail.handler.RewardValidationHandler;
 import com.retail.helper.CustomerRepositoryHelper;
-import com.retail.util.RewardUtil;
+import com.retail.helper.RewardCalculatorHelper;
 import com.retail.helper.TransactionRepositoryHelper;
-import com.retail.util.DateValidatorUtil;
+import com.retail.util.DateValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -35,15 +34,15 @@ public class RewardServiceImpl implements RewardService {
     private static final Logger logger = LoggerFactory.getLogger(RewardServiceImpl.class);
 
     private final CustomerRepositoryHelper customerRepositoryHelper;
-    private final RewardValidationUtil rewardValidationUtil;
+    private final RewardValidationHandler rewardValidationHandler;
     private final TransactionRepositoryHelper transactionRepositoryHelper;
 
     public RewardServiceImpl(
             CustomerRepositoryHelper customerRepositoryHelper,
-            RewardValidationUtil rewardValidationUtil,
+            RewardValidationHandler rewardValidationHandler,
             TransactionRepositoryHelper transactionRepositoryHelper) {
         this.customerRepositoryHelper = customerRepositoryHelper;
-        this.rewardValidationUtil = rewardValidationUtil;
+        this.rewardValidationHandler = rewardValidationHandler;
         this.transactionRepositoryHelper = transactionRepositoryHelper;
     }
 
@@ -59,14 +58,14 @@ public class RewardServiceImpl implements RewardService {
     public List<CustomerRewardResponse> getAllCustomerRewards(LocalDate startDate, LocalDate endDate) {
         logger.info("Initiating reward calculation for all customers from {} to {}", startDate, endDate);
 
-        DateValidatorUtil.validateDates(startDate, endDate);
-        rewardValidationUtil.validateDate(startDate);
-        rewardValidationUtil.validateDate(endDate);
+        DateValidator.validateDates(startDate, endDate);
+        rewardValidationHandler.validateDate(startDate);
+        rewardValidationHandler.validateDate(endDate);
 
         List<Customer> customers = customerRepositoryHelper.fetchAllCustomers();
         logger.debug("Fetched {} customers", customers.size());
 
-        rewardValidationUtil.validateCustomerList(customers);
+        rewardValidationHandler.validateCustomerList(customers);
 
         return customers.stream().map(customer -> {
             logger.debug("Processing customer: {} (ID: {})", customer.getCustomerName(), customer.getCustomerId());
@@ -74,32 +73,28 @@ public class RewardServiceImpl implements RewardService {
             List<Transaction> transactions = transactionRepositoryHelper
                     .findByCustomerIdAndTransactionDate(customer.getCustomerId(), startDate, endDate);
             logger.debug("Found {} transactions for customer {}", transactions.size(), customer.getCustomerId());
-            List<TransactionResponse> transactionResponseList = transactions.stream()
-                    .map(tx -> new TransactionResponse(
-                            tx.getTransactionId(), tx.getTransactionAmount(), tx.getTransactionDate()))
-                    .collect(Collectors.toList());
+
             Map<String, Integer> monthlyRewards = new HashMap<>();
             int totalRewards = 0;
 
             for (Transaction tx : transactions) {
                 String month = tx.getTransactionDate().getMonth().toString();
-                int points = RewardUtil.calculateRewardPoints(tx.getTransactionAmount());
+                int points = RewardCalculatorHelper.calculateRewardPoints(tx.getTransactionAmount());
                 monthlyRewards.put(month, monthlyRewards.getOrDefault(month, 0) + points);
                 totalRewards += points;
 
                 logger.debug("Transaction ID {}: Amount = {}, Points = {}", tx.getTransactionId(), tx.getTransactionAmount(), points);
             }
 
-            CustomerRewardResponse customerRewardResponse = new CustomerRewardResponse();
-            customerRewardResponse.setCustomerId(customer.getCustomerId());
-            customerRewardResponse.setCustomerName(customer.getCustomerName());
-            customerRewardResponse.setMonthlyRewards(monthlyRewards);
-            customerRewardResponse.setTotalRewards(totalRewards);
-            customerRewardResponse.setTransactions(transactionResponseList);
+            CustomerRewardResponse response = new CustomerRewardResponse();
+            response.setCustomerId(customer.getCustomerId());
+            response.setCustomerName(customer.getCustomerName());
+            response.setMonthlyRewards(monthlyRewards);
+            response.setTotalRewards(totalRewards);
 
             logger.info("Total rewards for customer {} = {}", customer.getCustomerId(), totalRewards);
 
-            return customerRewardResponse;
+            return response;
         }).collect(Collectors.toList());
     }
 
@@ -115,23 +110,19 @@ public class RewardServiceImpl implements RewardService {
     public CustomerRewardResponse getCustomerRewardById(Long customerId, LocalDate startDate, LocalDate endDate) {
         logger.info("Calculating reward for customer ID: {} from {} to {}", customerId, startDate, endDate);
 
-        DateValidatorUtil.validateDates(startDate, endDate);
+        DateValidator.validateDates(startDate, endDate);
 
         Customer customer = customerRepositoryHelper.fetchCustomerById(customerId);
         logger.debug("Fetched customer: {}", customer.getCustomerName());
 
         List<Transaction> transactions = transactionRepositoryHelper
                 .findByCustomerIdAndTransactionDate(customerId, startDate, endDate);
-        logger.debug("Found {} transactions for customer {}", transactions.size(), customerId);
 
-        List<TransactionResponse> transactionResponseList = transactions.stream()
-                .map(tx -> new TransactionResponse(
-                        tx.getTransactionId(), tx.getTransactionAmount(), tx.getTransactionDate()))
-                .collect(Collectors.toList());
+        logger.debug("Found {} transactions for customer {}", transactions.size(), customerId);
 
         int totalPoints = transactions.stream()
                 .mapToInt(t -> {
-                    int points = RewardUtil.calculateRewardPoints(t.getTransactionAmount());
+                    int points = RewardCalculatorHelper.calculateRewardPoints(t.getTransactionAmount());
                     logger.debug("Transaction ID {}: Amount = {}, Points = {}", t.getTransactionId(), t.getTransactionAmount(), points);
                     return points;
                 })
@@ -139,6 +130,6 @@ public class RewardServiceImpl implements RewardService {
 
         logger.info("Total rewards for customer ID {} = {}", customerId, totalPoints);
 
-        return new CustomerRewardResponse(customer.getCustomerId(), customer.getCustomerName(), totalPoints, transactionResponseList);
+        return new CustomerRewardResponse(customer.getCustomerId(), customer.getCustomerName(), totalPoints);
     }
 }
