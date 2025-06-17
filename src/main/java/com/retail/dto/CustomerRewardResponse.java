@@ -1,5 +1,6 @@
 package com.retail.dto;
 
+import java.util.List;
 import java.util.Map;
 
 public class CustomerRewardResponse {
@@ -7,6 +8,17 @@ public class CustomerRewardResponse {
     private String customerName;
     private Map<String, Integer> monthlyRewards;
     private int totalRewards;
+    private List<TransactionResponse> transactions;
+
+    public CustomerRewardResponse(Long customerId, String customerName, int totalPoints, List<TransactionResponse> transactions) {
+        this.customerId = customerId;
+        this.customerName = customerName;
+        this.totalRewards = totalPoints;
+        this.transactions = transactions;
+    }
+
+    public CustomerRewardResponse() {
+    }
 
     public Long getCustomerId() {
         return customerId;
@@ -38,6 +50,14 @@ public class CustomerRewardResponse {
 
     public void setTotalRewards(int totalRewards) {
         this.totalRewards = totalRewards;
+    }
+
+    public List<TransactionResponse> getTransactions() {
+        return transactions;
+    }
+
+    public void setTransactions(List<TransactionResponse> transactions) {
+        this.transactions = transactions;
     }
 }
 

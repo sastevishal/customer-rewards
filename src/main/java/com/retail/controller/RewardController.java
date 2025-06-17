@@ -12,32 +12,64 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * REST Controller to handle reward-related endpoints.
- *
- * Endpoint: /api/rewards
- * - Accepts 'endDate' as a query parameter in 'yyyy-MM-dd' format.
- * - Returns a list of CustomerRewardResponse objects.
+ * REST Controller to expose reward-related endpoints.
+ * <p>
+ * Base Path: /api
+ * Endpoints:
+ * - GET /api?startDate=yyyy-MM-dd&endDate=yyyy-MM-dd → Rewards for all customers
+ * - GET /api/{customerId}?startDate=yyyy-MM-dd&endDate=yyyy-MM-dd → Rewards for a specific customer
  */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/rewards")
 public class RewardController {
+
     private static final Logger logger = LoggerFactory.getLogger(RewardController.class);
+
     private final RewardService rewardService;
+
     public RewardController(RewardService rewardService) {
         this.rewardService = rewardService;
     }
 
     /**
-     * Endpoint to fetch rewards for all customers for the last 3 months from the provided endDate.
+     * Fetch reward summary for all customers between the specified date range.
      *
-     * @param endDate the end date in yyyy-MM-dd format
+     * @param startDate the start date in yyyy-MM-dd format
+     * @param endDate   the end date in yyyy-MM-dd format
      * @return ResponseEntity containing list of customer reward responses
      */
-    @GetMapping("/rewards")
-    public ResponseEntity<List<CustomerRewardResponse>> getRewardsForAllCustomers(
-            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        logger.info("Received request to fetch customer rewards with endDate: {}", endDate);
-        List<CustomerRewardResponse> customerRewardResponses = rewardService.getAllCustomerRewards(endDate);
-        return ResponseEntity.ok(customerRewardResponses);
+    @GetMapping
+    public ResponseEntity<List<CustomerRewardResponse>> getAllCustomerRewards(
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
+
+        logger.info("Fetching rewards for all customers from {} to {}", startDate, endDate);
+
+        List<CustomerRewardResponse> rewards = rewardService.getAllCustomerRewards(startDate, endDate);
+
+        logger.debug("Total customer rewards retrieved: {}", rewards.size());
+        return ResponseEntity.ok(rewards);
+    }
+
+    /**
+     * Fetch reward summary for a specific customer between the specified date range.
+     *
+     * @param customerId the unique identifier of the customer
+     * @param startDate  the start date in yyyy-MM-dd format
+     * @param endDate    the end date in yyyy-MM-dd format
+     * @return ResponseEntity containing reward response of the specified customer
+     */
+    @GetMapping("/{customerId}")
+    public ResponseEntity<CustomerRewardResponse> getCustomerRewardById(
+            @PathVariable Long customerId,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
+
+        logger.info("Fetching reward for customerId={} from {} to {}", customerId, startDate, endDate);
+
+        CustomerRewardResponse response = rewardService.getCustomerRewardById(customerId, startDate, endDate);
+
+        logger.debug("Customer {} reward total: {}", customerId, response.getTotalRewards());
+        return ResponseEntity.ok(response);
     }
 }

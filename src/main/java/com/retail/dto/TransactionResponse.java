@@ -3,39 +3,37 @@ package com.retail.dto;
 import java.time.LocalDate;
 
 public class TransactionResponse {
+    private Long transactionId;
+    private Double transactionAmount;
+    private LocalDate transactionDate;
 
-    private double amount;
-    private LocalDate date;
-    private int rewardPoints;
-
-    public TransactionResponse(double amount, LocalDate date, int rewardPoints) {
-        this.amount = amount;
-        this.date = date;
-        this.rewardPoints = rewardPoints;
+    public TransactionResponse(Long id, Double amt, LocalDate date) {
+        this.transactionId = id;
+        this.transactionAmount = amt;
+        this.transactionDate = date;
     }
 
-    public double getAmount() {
-        return amount;
+    public Long getTransactionId() {
+        return transactionId;
     }
 
-    public void setAmount(double amount) {
-        this.amount = amount;
+    public void setTransactionId(Long transactionId) {
+        this.transactionId = transactionId;
     }
 
-    public LocalDate getDate() {
-        return date;
+    public Double getTransactionAmount() {
+        return transactionAmount;
     }
 
-    public void setDate(LocalDate date) {
-        this.date = date;
+    public void setTransactionAmount(Double transactionAmount) {
+        this.transactionAmount = transactionAmount;
     }
 
-    public int getRewardPoints() {
-        return rewardPoints;
+    public LocalDate getTransactionDate() {
+        return transactionDate;
     }
 
-    public void setRewardPoints(int rewardPoints) {
-        this.rewardPoints = rewardPoints;
+    public void setTransactionDate(LocalDate transactionDate) {
+        this.transactionDate = transactionDate;
     }
-
 }

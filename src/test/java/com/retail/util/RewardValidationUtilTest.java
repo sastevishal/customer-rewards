@@ -1,4 +1,4 @@
-package com.retail.hanlder;
+package com.retail.util;
 
 import com.retail.entity.Customer;
 import com.retail.exceptionhandler.NoCustomerFoundException;
@@ -11,24 +11,24 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class RewardValidationHandlerTest {
+class RewardValidationUtilTest {
 
-    private RewardValidationHandler validationHandler;
+    private RewardValidationUtil validationHandler;
 
     @BeforeEach
     void setUp() {
-        validationHandler = new RewardValidationHandler();
+        validationHandler = new RewardValidationUtil();
     }
 
     @Test
     void validateEndDate_shouldNotThrowForValidDate() {
-        assertDoesNotThrow(() -> validationHandler.validateEndDate(LocalDate.now()));
+        assertDoesNotThrow(() -> validationHandler.validateDate(LocalDate.now()));
     }
 
     @Test
     void validateEndDate_shouldThrowForNull() {
         Exception exception = assertThrows(IllegalArgumentException.class, () ->
-                validationHandler.validateEndDate(null)
+                validationHandler.validateDate(null)
         );
         assertEquals("End date must not be null.", exception.getMessage());
     }
