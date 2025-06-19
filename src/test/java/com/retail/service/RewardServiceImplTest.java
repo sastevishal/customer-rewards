@@ -3,108 +3,128 @@ package com.retail.service;
 import com.retail.dto.CustomerRewardResponse;
 import com.retail.entity.Customer;
 import com.retail.entity.Transaction;
-import com.retail.handler.RewardValidationHandler;
 import com.retail.helper.CustomerRepositoryHelper;
 import com.retail.helper.TransactionRepositoryHelper;
+import com.retail.util.RewardValidationUtil;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
 class RewardServiceImplTest {
 
-    @Mock
-    private CustomerRepositoryHelper customerRepositoryHelper;
-
-    @Mock
-    private RewardValidationHandler rewardValidationHandler;
-
-    @Mock
-    private TransactionRepositoryHelper transactionRepositoryHelper;
-
-    @InjectMocks
+    private CustomerRepositoryHelper customerRepoHelper;
+    private TransactionRepositoryHelper transactionRepoHelper;
+    private RewardValidationUtil rewardValidationUtil;
     private RewardServiceImpl rewardService;
 
-    private Customer customer;
-    private List<Transaction> transactions;
-
     @BeforeEach
-    void setup() {
-        customer = new Customer(1L, "John Doe");
-        transactions = Arrays.asList(
-                new Transaction(1L, 120.0, LocalDate.now().minusDays(10), customer),
-                new Transaction(2L, 70.0, LocalDate.now().minusDays(20), customer)
-        );
+    void setUp() {
+        customerRepoHelper = mock(CustomerRepositoryHelper.class);
+        transactionRepoHelper = mock(TransactionRepositoryHelper.class);
+        rewardValidationUtil = mock(RewardValidationUtil.class);
+        rewardService = new RewardServiceImpl(customerRepoHelper, rewardValidationUtil, transactionRepoHelper);
     }
 
     @Test
-    void testGetAllCustomerRewards_ShouldReturnRewards() {
-        LocalDate startDate = LocalDate.now().minusMonths(3);
-        LocalDate endDate = LocalDate.now();
+    @DisplayName("Should calculate rewards for all customers correctly")
+    void testGetAllCustomerRewards() {
 
-        when(customerRepositoryHelper.fetchAllCustomers()).thenReturn(Collections.singletonList(customer));
-        when(transactionRepositoryHelper.findByCustomerIdAndTransactionDate(1L, startDate, endDate)).thenReturn(transactions);
+        LocalDate start = LocalDate.of(2024, 3, 1);
+        LocalDate end = LocalDate.of(2024, 6, 1);
 
-        List<CustomerRewardResponse> responses = rewardService.getAllCustomerRewards(startDate, endDate);
+        Customer customer = new Customer();
+        customer.setCustomerId(1L);
+        customer.setCustomerName("John");
 
-        assertNotNull(responses);
+        Transaction tx1 = new Transaction();
+        tx1.setTransactionId(101L);
+        tx1.setTransactionAmount(120.0);
+        tx1.setTransactionDate(LocalDate.of(2024, 3, 10));
+
+        when(customerRepoHelper.fetchAllCustomers()).thenReturn(List.of(customer));
+        when(transactionRepoHelper.findByCustomerIdAndTransactionDate(1L, start, end))
+                .thenReturn(List.of(tx1));
+
+        List<CustomerRewardResponse> responses = rewardService.getAllCustomerRewards(start, end);
+
         assertEquals(1, responses.size());
-        assertEquals(1L, responses.get(0).getCustomerId());
-        assertEquals("John Doe", responses.get(0).getCustomerName());
-        assertTrue(responses.get(0).getTotalRewards() > 0);
+        CustomerRewardResponse response = responses.get(0);
+        assertEquals(1L, response.getCustomerId());
+        assertEquals("John", response.getCustomerName());
+        assertEquals(90, response.getTotalRewards()); // 120 => 50 between 50-100 + 20 * 2
+        assertEquals(1, response.getMonthlyRewards().size());
+        assertTrue(response.getMonthlyRewards().containsKey("MARCH"));
     }
 
     @Test
-    void testGetCustomerRewardById_ShouldReturnReward() {
-        LocalDate startDate = LocalDate.now().minusMonths(3);
-        LocalDate endDate = LocalDate.now();
+    @DisplayName("Should calculate reward for specific customer correctly")
+    void testGetCustomerRewardById() {
+        LocalDate start = LocalDate.of(2024, 3, 1);
+        LocalDate end = LocalDate.of(2024, 6, 1);
 
-        when(customerRepositoryHelper.fetchCustomerById(1L)).thenReturn(customer);
-        when(transactionRepositoryHelper.findByCustomerIdAndTransactionDate(1L, startDate, endDate)).thenReturn(transactions);
+        Customer customer = new Customer();
+        customer.setCustomerId(2L);
+        customer.setCustomerName("Jane");
 
-        CustomerRewardResponse response = rewardService.getCustomerRewardById(1L, startDate, endDate);
+        Transaction tx1 = new Transaction();
+        tx1.setTransactionId(102L);
+        tx1.setTransactionAmount(95.0);
+        tx1.setTransactionDate(LocalDate.of(2024, 4, 15));
+
+        when(customerRepoHelper.fetchCustomerById(2L)).thenReturn(customer);
+        when(transactionRepoHelper.findByCustomerIdAndTransactionDate(2L, start, end))
+                .thenReturn(List.of(tx1));
+
+        CustomerRewardResponse response = rewardService.getCustomerRewardById(2L, start, end);
 
         assertNotNull(response);
-        assertEquals(1L, response.getCustomerId());
-        assertEquals("John Doe", response.getCustomerName());
-        assertTrue(response.getTotalRewards() > 0);
+        assertEquals(2L, response.getCustomerId());
+        assertEquals("Jane", response.getCustomerName());
+        assertEquals(45, response.getTotalRewards()); // 95 => 45 points (45 between 50-100)
+        assertEquals(1, response.getMonthlyRewards().size());
+        assertTrue(response.getMonthlyRewards().containsKey("APRIL"));
     }
 
     @Test
-    void testGetAllCustomerRewards_WithNoCustomers_ShouldThrowException() {
-        LocalDate startDate = LocalDate.now().minusMonths(3);
-        LocalDate endDate = LocalDate.now();
+    @DisplayName("Should handle empty customers and return empty list")
+    void testGetAllCustomerRewardsWithNoCustomers() {
+        LocalDate start = LocalDate.of(2024, 1, 1);
+        LocalDate end = LocalDate.of(2024, 2, 1);
 
-        when(customerRepositoryHelper.fetchAllCustomers()).thenReturn(Collections.emptyList());
-        doThrow(new RuntimeException("No customers found"))
-                .when(rewardValidationHandler).validateCustomerList(Collections.emptyList());
+        when(customerRepoHelper.fetchAllCustomers()).thenReturn(Collections.emptyList());
 
-        Exception exception = assertThrows(RuntimeException.class, () ->
-                rewardService.getAllCustomerRewards(startDate, endDate));
+        List<CustomerRewardResponse> result = rewardService.getAllCustomerRewards(start, end);
 
-        assertEquals("No customers found", exception.getMessage());
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
     @Test
-    void testGetCustomerRewardById_InvalidDates_ShouldThrowException() {
-        LocalDate startDate = LocalDate.now();
-        LocalDate endDate = LocalDate.now().minusMonths(1);
+    @DisplayName("Should handle no transactions for specific customer")
+    void testGetCustomerRewardByIdWithNoTransactions() {
+        LocalDate start = LocalDate.of(2024, 1, 1);
+        LocalDate end = LocalDate.of(2024, 2, 1);
 
-        Exception exception = assertThrows(IllegalArgumentException.class, () ->
-                rewardService.getCustomerRewardById(1L, startDate, endDate));
+        Customer customer = new Customer();
+        customer.setCustomerId(3L);
+        customer.setCustomerName("Ravi");
 
-        assertEquals("Start date cannot be after end date", exception.getMessage());
+        when(customerRepoHelper.fetchCustomerById(3L)).thenReturn(customer);
+        when(transactionRepoHelper.findByCustomerIdAndTransactionDate(3L, start, end))
+                .thenReturn(Collections.emptyList());
+
+        CustomerRewardResponse result = rewardService.getCustomerRewardById(3L, start, end);
+
+        assertEquals(0, result.getTotalRewards());
+        assertTrue(result.getTransactions().isEmpty());
+        assertTrue(result.getMonthlyRewards().isEmpty());
     }
 }

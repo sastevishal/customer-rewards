@@ -12,16 +12,16 @@ import java.time.format.DateTimeParseException;
 
 /**
  * Global exception handler for the Rewards API.
- *
+ * <p>
  * This class uses @RestControllerAdvice to intercept exceptions thrown from any controller
  * and returns a structured and meaningful error response to the client.
- *
+ * <p>
  * Handled Exceptions:
  * - DateTimeParseException: Triggered when the input date format is invalid.
  * - IllegalArgumentException: Triggered for invalid arguments like start date after end date.
  * - NoTransactionFoundException: Custom exception thrown when no transactions are found.
  * - Exception: Catches all other unhandled exceptions as a fallback.
- *
+ * <p>
  * Each handler returns an appropriate HTTP status code and a user-friendly error message.
  */
 

@@ -10,25 +10,18 @@ public class CustomerRewardResponse {
     private int totalRewards;
     private List<TransactionResponse> transactions;
 
-    public CustomerRewardResponse(Long customerId, String customerName, int totalPoints, List<TransactionResponse> transactions) {
+    public CustomerRewardResponse(Long customerId, String customerName, Map<String, Integer> monthlyRewards, int totalPoints, List<TransactionResponse> transactions) {
         this.customerId = customerId;
         this.customerName = customerName;
+        this.monthlyRewards = monthlyRewards;
         this.totalRewards = totalPoints;
         this.transactions = transactions;
     }
 
     public CustomerRewardResponse() {
-    }
-
-    public CustomerRewardResponse(Long customerId, String customerName, int totalPoints) {
-        this.customerId = customerId;
-        this.customerName = customerName;
-        this.totalRewards = totalPoints;
-    }
-
-    public CustomerRewardResponse() {
 
     }
+
 
     public Long getCustomerId() {
         return customerId;
